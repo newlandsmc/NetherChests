@@ -1,0 +1,5 @@
+name: NetherChests
+version: '${version}'
+main: com.semivanilla.netherchests.NetherChests
+api-version: 1.19
+depend: [CookieCore]

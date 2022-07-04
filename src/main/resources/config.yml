@@ -1,0 +1,3 @@
+storage-provider: 'H2StorageProvider'
+name: '<dark_red>Nether Chest'
+rows: 3
