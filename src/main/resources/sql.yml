@@ -1,3 +1,5 @@
 url: 'url-here'
 user: 'user-here'
 password: 'password-here'
+database: 'database-here'
+port: 3306

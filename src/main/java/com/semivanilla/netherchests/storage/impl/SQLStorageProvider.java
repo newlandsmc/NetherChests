@@ -3,6 +3,7 @@ package com.semivanilla.netherchests.storage.impl;
 import com.semivanilla.netherchests.NetherChests;
 import com.semivanilla.netherchests.storage.StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
+import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 
@@ -14,7 +15,7 @@ import java.util.UUID;
 public class SQLStorageProvider implements StorageProvider {
     private static File sqlConfigFile;
 
-    private Connection connection;
+    private HikariDataSource dataSource;
 
     @Override
     public void init(NetherChests plugin) {
@@ -29,10 +30,20 @@ public class SQLStorageProvider implements StorageProvider {
         String url = config.getString("url");
         String user = config.getString("user");
         String password = config.getString("password");
+        String database = config.getString("database");
+        int port = config.getInt("port", 3306);
         try {
-            connection = DriverManager.getConnection(url, user, password);
+            //connection = DriverManager.getConnection(url, user, password);
+            dataSource = new HikariDataSource();
+            dataSource.setDataSourceClassName("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
+            dataSource.addDataSourceProperty("serverName", url);
+            dataSource.addDataSourceProperty("port", port);
+            dataSource.addDataSourceProperty("databaseName", database);
+            dataSource.addDataSourceProperty("user", user);
+            dataSource.addDataSourceProperty("password", password);
+
             String sql = "CREATE TABLE IF NOT EXISTS inventories(UUID varchar(255), contents MEDIUMTEXT)";
-            PreparedStatement statement = connection.prepareStatement(sql);
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(sql);
             statement.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -41,12 +52,8 @@ public class SQLStorageProvider implements StorageProvider {
 
     @Override
     public void disable(NetherChests plugin) {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
         }
     }
 
@@ -55,6 +62,7 @@ public class SQLStorageProvider implements StorageProvider {
         String base64 = BukkitSerialization.itemStackArrayToBase64(items);
         String selectSQL = "SELECT * FROM inventories WHERE UUID = ?";
         try {
+            Connection connection = dataSource.getConnection();
             PreparedStatement statement1 = connection.prepareStatement(selectSQL);
             statement1.setString(1, uuid.toString());
             ResultSet resultSet = statement1.executeQuery();
@@ -80,7 +88,7 @@ public class SQLStorageProvider implements StorageProvider {
     public ItemStack[] load(UUID uuid) {
         String selectSQL = "SELECT * FROM inventories WHERE UUID = ?";
         try {
-            PreparedStatement statement = connection.prepareStatement(selectSQL);
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(selectSQL);
             statement.setString(1, uuid.toString());
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {

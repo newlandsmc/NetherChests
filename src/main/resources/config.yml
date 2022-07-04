@@ -1,3 +1,5 @@
-storage-provider: 'H2StorageProvider'
+storage-provider: 'H2StorageProvider' # Can be SQLStorageProvider or H2StorageProvider
+# SQL config will be generated in sql.yml
 name: '<dark_red>Nether Chest'
 rows: 3
+update-on-transaction: true
