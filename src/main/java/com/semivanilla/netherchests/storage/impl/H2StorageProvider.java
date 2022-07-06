@@ -39,10 +39,10 @@ public class H2StorageProvider implements StorageProvider {
                 1
         );
         if (valuesList.isEmpty()) {
-            System.out.println("Inserting new row");
+            //System.out.println("Inserting new row");
             storage.insertIntoTable("inventories", Arrays.asList("UUID", "contents"), new Values(uuid.toString(), base64));
         } else {
-            System.out.println("Updating row");
+            //System.out.println("Updating row");
             storage.updateColumnsWhere("inventories", Arrays.asList("contents"), "UUID = '" + uuid + "'", new Values(base64));
         }
     }
@@ -59,12 +59,23 @@ public class H2StorageProvider implements StorageProvider {
             return new ItemStack[0];
         }
         Values val = valuesList.get(0);
-        System.out.println(Arrays.toString(val.getValues()) + " | " + val);
+        //System.out.println(Arrays.toString(val.getValues()) + " | " + val);
         String base64 = val.getValues()[0].toString();
         try {
             return BukkitSerialization.itemStackArrayFromBase64(base64);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean contains(UUID uuid) {
+        List<Values> valuesList = storage.getRowsWhere(
+                "inventories",
+                "UUID",
+                "UUID = '" + uuid.toString() + "'",
+                1
+        );
+        return !valuesList.isEmpty();
     }
 }

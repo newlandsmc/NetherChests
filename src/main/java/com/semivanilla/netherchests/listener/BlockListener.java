@@ -1,6 +1,9 @@
 package com.semivanilla.netherchests.listener;
 
 import com.semivanilla.netherchests.NetherChests;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -16,7 +19,8 @@ import org.bukkit.metadata.FixedMetadataValue;
 public class BlockListener implements Listener {
     public static boolean isNetherChestSign(String[] lines) {
         for (String line : lines) {
-            if (line.equalsIgnoreCase("[netherchest]")) return true;
+            line = ChatColor.stripColor(line);
+            if (line.equalsIgnoreCase("[netherchest]") || line.equalsIgnoreCase("[nether chest]")) return true;
         }
         return false;
     }
@@ -51,20 +55,25 @@ public class BlockListener implements Listener {
 
     @EventHandler
     public void onPlace(SignChangeEvent event) {
-        System.out.println("a");
         if (event.getBlock().getType().name().endsWith("_SIGN")) {
             Block signBlock = event.getBlock();
             Sign sign = (Sign) signBlock.getState();
-            System.out.println("b");
             if (isNetherChestSign(event.getLines())) {
-                System.out.println("c");
                 Block chest = getConnectedChest(sign);
                 if (chest != null) {
-                    System.out.println("NetherChest found!");
+                    //System.out.println("NetherChest found!");
                     chest.setMetadata("NetherChest", new FixedMetadataValue(NetherChests.getInstance(), true));
+                    Bukkit.getServer().getScheduler().runTaskLater(NetherChests.getInstance(), ()-> {
+                        Component signName = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("sign-name", "<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]"));
+                        sign.setLine(0, "");
+                        sign.line(1, signName);
+                        sign.setLine(2, "");
+                        sign.setLine(3, "");
+                        sign.update();
+                    }, 10);
                     return;
                 }
-                System.out.println("Could not find connected chest for NetherChest sign");
+                //System.out.println("Could not find connected chest for NetherChest sign");
             }
         }
     }

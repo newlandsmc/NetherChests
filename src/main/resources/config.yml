@@ -1,5 +1,6 @@
 storage-provider: 'H2StorageProvider' # Can be SQLStorageProvider or H2StorageProvider
 # SQL config will be generated in sql.yml
-name: '<dark_red>Nether Chest'
-rows: 3
-update-on-transaction: true
+name: '<dark_red>Nether Chest' # Name of the chest title.
+rows: 3 # How many rows the chest has
+update-on-transaction: true # Should the plugin update the database every time an item is updated/clicked
+sign-name: '<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]' # has to be either [netherchest] or [nether chest]

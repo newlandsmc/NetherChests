@@ -32,10 +32,19 @@ public class SQLStorageProvider implements StorageProvider {
         String password = config.getString("password");
         String database = config.getString("database");
         int port = config.getInt("port", 3306);
+        String driver = config.getString("driver-class", "com.mysql.jdbc.Driver");
         try {
             //connection = DriverManager.getConnection(url, user, password);
             dataSource = new HikariDataSource();
-            dataSource.setDataSourceClassName("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
+            dataSource.setDriverClassName(driver);
+            dataSource.setJdbcUrl(
+                    "jdbc:mysql://" +
+                            url +
+                            ":" +
+                            port +
+                            "/" +
+                            database
+            );
             dataSource.addDataSourceProperty("serverName", url);
             dataSource.addDataSourceProperty("port", port);
             dataSource.addDataSourceProperty("databaseName", database);
@@ -99,6 +108,19 @@ public class SQLStorageProvider implements StorageProvider {
                     throw new RuntimeException(e);
                 }
             } else return new ItemStack[0];
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean contains(UUID uuid) {
+        String selectSQL = "SELECT * FROM inventories WHERE UUID = ?";
+        try {
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(selectSQL);
+            statement.setString(1, uuid.toString());
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.next();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

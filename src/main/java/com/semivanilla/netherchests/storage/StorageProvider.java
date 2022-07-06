@@ -13,4 +13,6 @@ public interface StorageProvider {
     void save(UUID uuid, ItemStack[] items);
 
     ItemStack[] load(UUID uuid);
+
+    boolean contains(UUID uuid);
 }

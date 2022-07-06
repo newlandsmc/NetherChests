@@ -3,3 +3,4 @@ user: 'user-here'
 password: 'password-here'
 database: 'database-here'
 port: 3306
+driver-class: 'com.mysql.jdbc.Driver'

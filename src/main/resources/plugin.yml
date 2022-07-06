@@ -3,3 +3,7 @@ version: '${version}'
 main: com.semivanilla.netherchests.NetherChests
 api-version: 1.19
 depend: [CookieCore]
+commands:
+  netherchests:
+    permission: netherchests.command
+    description: NetherChests Management Command
