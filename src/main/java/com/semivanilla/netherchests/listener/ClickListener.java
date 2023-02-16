@@ -21,7 +21,8 @@ public class ClickListener implements Listener {
                         NetherChests.getInstance().openNetherChest(event.getPlayer(), event.getPlayer().getUniqueId());
                     } else {
                         String owner = event.getClickedBlock().getMetadata("NetherChestOwner").get(0).asString();
-                        UUID ownerUUID = UUID.fromString(owner);
+                        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
+                        UUID ownerUUID = offlinePlayer.getUniqueId();
                         NetherChests.getInstance().openNetherChest(event.getPlayer(), ownerUUID);
                     }
                 }
