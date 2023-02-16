@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.19-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:1.19.3-R0.1-SNAPSHOT'
     compileOnly files('./run/plugins/CookieCore.jar') // CookieCore, has h2 and serialization
 
     compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3'

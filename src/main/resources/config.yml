@@ -4,3 +4,6 @@ name: '<dark_red>Nether Chest' # Name of the chest title.
 rows: 3 # How many rows the chest has
 update-on-transaction: true # Should the plugin update the database every time an item is updated/clicked
 sign-name: '<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]' # has to be either [netherchest] or [nether chest]
+player-name-format: '<white>%name%' # Format of the player name on the sign
+persist-chest-to-player: false # Should the chest be locked to the player who placed it, and anyone else can open said player's chest
+lock-chests: true # Should a chest only be able to be viewed by one player at a time? This is to prevent any dupe bugs. (does not work across servers)

@@ -65,9 +65,10 @@ public class BlockListener implements Listener {
                     chest.setMetadata("NetherChest", new FixedMetadataValue(NetherChests.getInstance(), true));
                     Bukkit.getServer().getScheduler().runTaskLater(NetherChests.getInstance(), ()-> {
                         Component signName = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("sign-name", "<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]"));
+                        Component nameLine = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("player-name-format", "<white>%name%").replace("%name%", event.getPlayer().getName()));
                         sign.setLine(0, "");
                         sign.line(1, signName);
-                        sign.setLine(2, "");
+                        sign.line(2, nameLine);
                         sign.setLine(3, "");
                         sign.update();
                     }, 10);

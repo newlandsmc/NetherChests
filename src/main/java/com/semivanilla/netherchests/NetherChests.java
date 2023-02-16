@@ -6,7 +6,9 @@ import com.semivanilla.netherchests.storage.StorageProvider;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.StorageGui;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -25,8 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private static NetherChests instance;
@@ -34,6 +35,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private StorageProvider storageProvider;
 
     private boolean updateOnTransaction = false;
+    private Map<UUID, UUID> openChests = new HashMap<>();
 
     public static NetherChests getInstance() {
         return instance;
@@ -109,6 +111,9 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                     Sign sign = (Sign) relativeBlock.getState();
                     if (BlockListener.isNetherChestSign(sign.getLines())) {
                         block.setMetadata("NetherChest", new FixedMetadataValue(this, true));
+                        Component line2 = sign.line(2);
+                        String rawOwner = PlainTextComponentSerializer.plainText().serialize(line2);
+                        block.setMetadata("NetherChestOwner", new FixedMetadataValue(this, rawOwner));
                         return true;
                     }
                 }
@@ -119,6 +124,13 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     }
 
     public void openNetherChest(Player player, UUID uuid) {
+        openNetherChest(player, uuid, false);
+    }
+    public void openNetherChest(Player player, UUID uuid, boolean ignoreLock) {
+        if (!ignoreLock && NetherChests.getInstance().isNetherChestOpen(uuid)) {
+            player.sendMessage(ChatColor.RED + "This chest is already open!");
+            return;
+        }
         player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 1, 1);
         ItemStack[] items = NetherChests.getInstance().getStorageProvider().load(uuid);
         StorageGui gui = Gui.storage()
@@ -130,11 +142,13 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                 gui.setItem(i, new GuiItem(items[i]));
             }
         }
+        openChests.put(uuid, player.getUniqueId());
         gui.open(player);
         gui.setCloseGuiAction((e) -> {
             NetherChests.getInstance().getStorageProvider().save(uuid,
                     e.getInventory().getContents());
             player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_CLOSE, 1, 1);
+            openChests.remove(uuid);
         });
         gui.setDefaultTopClickAction((e) -> {
             if (NetherChests.getInstance().isUpdateOnTransaction()) {
@@ -177,8 +191,8 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                 return true;
             }
             sender.sendMessage(ChatColor.GREEN + "Opening " + player.getName() + "'s Nether Chest...");
-            openNetherChest((Player) sender, player.getUniqueId());
-        }else if (args[0].equalsIgnoreCase("create")) {
+            openNetherChest((Player) sender, player.getUniqueId(), true);
+        } else if (args[0].equalsIgnoreCase("create")) {
             if (args.length == 1) {
                 sender.sendMessage(ChatColor.RED + "Usage: /netherchests create <player>");
                 return true;
@@ -194,5 +208,9 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             return true;
         }
         return true;
+    }
+
+    public boolean isNetherChestOpen(UUID ownerUUID) {
+        return getConfig().getBoolean("lock-chests", true) && openChests.containsKey(ownerUUID);
     }
 }
