@@ -2,6 +2,7 @@ package com.semivanilla.netherchests.listener;
 
 import com.semivanilla.netherchests.NetherChests;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -61,8 +62,10 @@ public class BlockListener implements Listener {
             if (isNetherChestSign(event.getLines())) {
                 Block chest = getConnectedChest(sign);
                 if (chest != null) {
-                    //System.out.println("NetherChest found!");
+                    System.out.println("NetherChest found!");
                     chest.setMetadata("NetherChest", new FixedMetadataValue(NetherChests.getInstance(), true));
+                    String rawOwner = event.getPlayer().getName();
+                    chest.setMetadata("NetherChestOwner", new FixedMetadataValue(NetherChests.getInstance(), rawOwner));
                     Bukkit.getServer().getScheduler().runTaskLater(NetherChests.getInstance(), ()-> {
                         Component signName = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("sign-name", "<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]"));
                         Component nameLine = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("player-name-format", "<white>%name%").replace("%name%", event.getPlayer().getName()));

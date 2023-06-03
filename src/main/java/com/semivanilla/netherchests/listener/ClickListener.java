@@ -9,7 +9,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.metadata.MetadataValue;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ClickListener implements Listener {
@@ -22,7 +24,12 @@ public class ClickListener implements Listener {
                     if (NetherChests.getInstance().getConfig().getBoolean("persist-chest-to-player", false)) {
                         NetherChests.getInstance().openNetherChest(event.getPlayer(), event.getPlayer().getUniqueId());
                     } else {
-                        String owner = event.getClickedBlock().getMetadata("NetherChestOwner").get(0).asString();
+                        List<MetadataValue> metadataValues = event.getClickedBlock().getMetadata("NetherChestOwner");
+                        if (metadataValues.isEmpty()) {
+                            event.getPlayer().sendMessage(ChatColor.RED + "This chest is not owned by anyone.");
+                            return;
+                        }
+                        String owner = metadataValues.get(0).asString();
                         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
                         UUID ownerUUID = offlinePlayer.getUniqueId();
                         NetherChests.getInstance().openNetherChest(event.getPlayer(), ownerUUID);
