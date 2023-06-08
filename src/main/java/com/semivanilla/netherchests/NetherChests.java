@@ -15,6 +15,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,12 +23,16 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private static NetherChests instance;
@@ -126,6 +131,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     public void openNetherChest(Player player, UUID uuid) {
         openNetherChest(player, uuid, false);
     }
+
     public void openNetherChest(Player player, UUID uuid, boolean ignoreLock) {
         if (!ignoreLock && NetherChests.getInstance().isNetherChestOpen(uuid)) {
             player.sendMessage(ChatColor.RED + "This chest is already open!");
@@ -150,7 +156,28 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_CLOSE, 1, 1);
             openChests.remove(uuid);
         });
+        gui.setDefaultClickAction(event -> {
+            System.out.println(event.getClick() + " | " + (event.getCursor() != null ? event.getCursor().getType() : "null") + " | " +
+                    (event.getCurrentItem() != null ? event.getCurrentItem().getType() : "null"));
+            ItemStack item = event.getCurrentItem();
+            if (item == null) item = event.getCursor();
+            if (item != null && item.getType().name().endsWith("SHULKER_BOX")) {
+                // get shulker box contents
+                if (item.getItemMeta() instanceof BlockStateMeta im) {
+                    if (im.getBlockState() instanceof ShulkerBox box) {
+                        for (ItemStack itemStack : box.getInventory().getContents()) {
+                            if (itemStack != null && !itemStack.getEnchantments().isEmpty()) {
+                                event.setCancelled(true);
+                                event.getWhoClicked().sendMessage(ChatColor.RED + "You cannot currently put shulker boxes with enchanted items in a nether chest! This is a bug and will be fixed soon. Sorry for the inconvenience. Please remove the enchanted items from the shulker box and try again. (They can be added to the netherchest separately)");
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
         gui.setDefaultTopClickAction((e) -> {
+            System.out.println(e.getAction() + " - top");
             if (NetherChests.getInstance().isUpdateOnTransaction()) {
                 if (e.getCurrentItem() == null && (e.getAction() != InventoryAction.PLACE_SOME && e.getAction() != InventoryAction.PLACE_ALL && e.getAction() != InventoryAction.PLACE_ONE)) {
                     return;
@@ -172,6 +199,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + " - /netherchests reload | Reloads the config");
             sender.sendMessage(ChatColor.RED + " - /netherchests open <player> | Open a player's nether chest");
             sender.sendMessage(ChatColor.RED + " - /netherchests create <player> | Add a entry into the database for a player.");
+            sender.sendMessage(ChatColor.RED + " - /netherchests delete <player> | Remove a player's entry from the database.");
             return false;
         }
         if (args[0].equalsIgnoreCase("reload")) {
@@ -204,6 +232,20 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             }
             sender.sendMessage(ChatColor.GREEN + "Creating " + player.getName() + "'s Nether Chest...");
             storageProvider.save(player.getUniqueId(), new ItemStack[0]);
+            sender.sendMessage(ChatColor.GREEN + "Done.");
+            return true;
+        } else if (args[0].equalsIgnoreCase("delete")) {
+            if (args.length == 1) {
+                sender.sendMessage(ChatColor.RED + "Usage: /netherchests delete <player>");
+                return true;
+            }
+            OfflinePlayer player = getServer().getOfflinePlayer(args[1]);
+            if (!storageProvider.contains(player.getUniqueId())) {
+                sender.sendMessage(ChatColor.RED + "Player " + player.getName() + " is not in the database. Use /netherchests create " + player.getName() + " to create a new entry.");
+                return true;
+            }
+            sender.sendMessage(ChatColor.GREEN + "Deleting " + player.getName() + "'s Nether Chest...");
+            storageProvider.delete(player.getUniqueId());
             sender.sendMessage(ChatColor.GREEN + "Done.");
             return true;
         }

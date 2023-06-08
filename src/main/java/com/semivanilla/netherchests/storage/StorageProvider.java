@@ -15,4 +15,6 @@ public interface StorageProvider {
     ItemStack[] load(UUID uuid);
 
     boolean contains(UUID uuid);
+
+    void delete(UUID uuid);
 }

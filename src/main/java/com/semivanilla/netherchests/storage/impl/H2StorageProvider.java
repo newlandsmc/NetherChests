@@ -78,4 +78,9 @@ public class H2StorageProvider implements StorageProvider {
         );
         return !valuesList.isEmpty();
     }
+
+    @Override
+    public void delete(UUID uuid) {
+        save(uuid, new ItemStack[0]);
+    }
 }

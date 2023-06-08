@@ -125,4 +125,16 @@ public class SQLStorageProvider implements StorageProvider {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void delete(UUID uuid) {
+        String deleteSQL = "DELETE FROM inventories WHERE UUID = ?";
+        try {
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(deleteSQL);
+            statement.setString(1, uuid.toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

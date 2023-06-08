@@ -1,6 +1,7 @@
 package com.semivanilla.netherchests.listener;
 
 import com.semivanilla.netherchests.NetherChests;
+import dev.triumphteam.gui.guis.BaseGui;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -8,6 +9,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.metadata.MetadataValue;
 
@@ -36,6 +38,17 @@ public class ClickListener implements Listener {
                     }
                 }
             }
+        }
+    }
+
+    // on gui hotkey
+    @EventHandler
+    public void onHotKey(InventoryClickEvent event) {
+        if (event.getClick().isKeyboardClick() && event.getInventory().getHolder() instanceof BaseGui) {
+            System.out.println("Hotkey event");
+            System.out.println((event.getCurrentItem() != null ? event.getCurrentItem().getType().name() : "null") + " | " + (event.getCursor() != null ? event.getCursor().getType().name() : "null"));
+            event.setCancelled(true);
+            event.getWhoClicked().sendMessage(ChatColor.RED + "You cannot use hotkeys in a NetherChest.");
         }
     }
 }
