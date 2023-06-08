@@ -45,8 +45,8 @@ public class ClickListener implements Listener {
     @EventHandler
     public void onHotKey(InventoryClickEvent event) {
         if (event.getClick().isKeyboardClick() && event.getInventory().getHolder() instanceof BaseGui) {
-            System.out.println("Hotkey event");
-            System.out.println((event.getCurrentItem() != null ? event.getCurrentItem().getType().name() : "null") + " | " + (event.getCursor() != null ? event.getCursor().getType().name() : "null"));
+            // System.out.println("Hotkey event");
+            // System.out.println((event.getCurrentItem() != null ? event.getCurrentItem().getType().name() : "null") + " | " + (event.getCursor() != null ? event.getCursor().getType().name() : "null"));
             event.setCancelled(true);
             event.getWhoClicked().sendMessage(ChatColor.RED + "You cannot use hotkeys in a NetherChest.");
         }
