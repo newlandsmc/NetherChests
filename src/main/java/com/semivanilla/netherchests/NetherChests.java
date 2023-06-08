@@ -9,10 +9,7 @@ import dev.triumphteam.gui.guis.StorageGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.ShulkerBox;
@@ -22,6 +19,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -180,6 +178,28 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             System.out.println(e.getAction() + " - top");
             if (NetherChests.getInstance().isUpdateOnTransaction()) {
                 if (e.getCurrentItem() == null && (e.getAction() != InventoryAction.PLACE_SOME && e.getAction() != InventoryAction.PLACE_ALL && e.getAction() != InventoryAction.PLACE_ONE)) {
+                    return;
+                }
+                ItemStack item = e.getCurrentItem();
+                /*
+                if(item.getType().name().endsWith("SHULKER_BOX") && item.getItemMeta() instanceof BlockStateMeta meta && meta.getBlockState() instanceof ShulkerBox shulker){
+                    for (ItemStack content : shulker.getInventory().getContents()) {
+                        if (content != null && content.getType() == Material.WRITTEN_BOOK || content.getType() == Material.WRITABLE_BOOK) {
+                            e.setCancelled(true);
+                            e.getWhoClicked().sendMessage(ChatColor.RED + "You cannot store books in a nether chest!");
+                            return;
+                        }
+                    }
+                }
+                if (item.getType() == Material.WRITTEN_BOOK || item.getType() == Material.WRITABLE_BOOK) {
+                    e.setCancelled(true);
+                    e.getWhoClicked().sendMessage(ChatColor.RED + "You cannot store books in a nether chest!");
+                    return;
+                }
+                 */
+                if (item.getType().name().endsWith("SHULKER_BOX")) {
+                    e.setCancelled(true);
+                    e.getWhoClicked().sendMessage(ChatColor.RED + "You cannot currently store shulker boxes in a nether chest! This will be fixed soon.");
                     return;
                 }
                 NetherChests.getInstance().getStorageProvider().save(uuid,
