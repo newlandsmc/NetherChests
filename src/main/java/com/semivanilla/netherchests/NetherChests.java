@@ -3,13 +3,17 @@ package com.semivanilla.netherchests;
 import com.semivanilla.netherchests.listener.BlockListener;
 import com.semivanilla.netherchests.listener.ClickListener;
 import com.semivanilla.netherchests.storage.StorageProvider;
+import com.semivanilla.netherchests.utils.BukkitSerialization;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.StorageGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.ShulkerBox;
@@ -19,7 +23,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -27,6 +30,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -159,7 +163,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             //        (event.getCurrentItem() != null ? event.getCurrentItem().getType() : "null"));
             ItemStack item = event.getCurrentItem();
             if (item == null) item = event.getCursor();
-            if (item != null && item.getType().name().endsWith("SHULKER_BOX")) {
+            if (item != null && item.getType().name().endsWith("SHULKER_BOX") && false) {
                 // get shulker box contents
                 if (item.getItemMeta() instanceof BlockStateMeta im) {
                     if (im.getBlockState() instanceof ShulkerBox box) {
@@ -246,6 +250,20 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             storageProvider.delete(player.getUniqueId());
             sender.sendMessage(ChatColor.GREEN + "Done.");
             return true;
+        } else if (args[0].equalsIgnoreCase("test_a")) {
+            ItemStack holding = ((Player) sender).getInventory().getItemInMainHand();
+            if (holding == null || holding.getType() == Material.AIR) {
+                sender.sendMessage(ChatColor.RED + "You must be holding an item to test this command.");
+                return true;
+            }
+            String base64 = BukkitSerialization.serializeItem(holding);
+            sender.sendMessage(ChatColor.GREEN + "Serialized: " + base64);
+            try {
+                ItemStack item = BukkitSerialization.deserializeItem(base64);
+                ((Player) sender).getInventory().setItemInMainHand(item);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return true;
     }
