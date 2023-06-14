@@ -180,6 +180,15 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         });
         gui.setDefaultTopClickAction((e) -> {
             //System.out.println(e.getAction() + " - top");
+            // if they are putting items in
+            if (e.getAction() == InventoryAction.PLACE_ALL || e.getAction() == InventoryAction.PLACE_ONE || e.getAction() == InventoryAction.PLACE_SOME) {
+                if (!getConfig().getBoolean("enable-insert", true)) {
+                    e.setCancelled(true);
+                    Component message = NetherChests.getMiniMessage().deserialize(getConfig().getString("insert-disabled-message", "<red>You cannot put items in this chest!"));
+                    e.getWhoClicked().sendMessage(message);
+                    return;
+                }
+            }
             if (NetherChests.getInstance().isUpdateOnTransaction()) {
                 if (e.getCurrentItem() == null && (e.getAction() != InventoryAction.PLACE_SOME && e.getAction() != InventoryAction.PLACE_ALL && e.getAction() != InventoryAction.PLACE_ONE)) {
                     return;

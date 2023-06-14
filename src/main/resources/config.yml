@@ -7,3 +7,6 @@ sign-name: '<bold><dark_gray>[<dark_red>Nether Chest<dark_gray>]' # has to be ei
 player-name-format: '<white>%name%' # Format of the player name on the sign
 persist-chest-to-player: false # Should the chest be locked to the player who placed it, and anyone else can open said player's chest
 lock-chests: true # Should a chest only be able to be viewed by one player at a time? This is to prevent any dupe bugs. (does not work across servers)
+
+enable-insert: true # should the player be able to put items in?
+insert-disabled-message: '<red>You cannot put items in this chest!' # Message to send to the player when they try to put items in and it's disabled
