@@ -3,7 +3,9 @@ package com.semivanilla.netherchests;
 import com.semivanilla.netherchests.listener.BlockListener;
 import com.semivanilla.netherchests.listener.ClickListener;
 import com.semivanilla.netherchests.storage.StorageProvider;
+import com.semivanilla.netherchests.storage.impl.H2StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
+import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.StorageGui;
@@ -159,6 +161,16 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             openChests.remove(uuid);
         });
         gui.setDefaultClickAction(event -> {
+            if (true) {
+                if (event.isShiftClick() && event.getClickedInventory() == event.getWhoClicked().getInventory()
+                        && !NetherChests.getInstance().getConfig().getBoolean("enable-insert", true)) { // in a NetherChest
+                    event.setCancelled(true);
+                    Component message = NetherChests.getMiniMessage().deserialize(NetherChests.getInstance().getConfig().getString("insert-disabled-message", "<red>You cannot put items in this chest!"));
+                    event.getWhoClicked().sendMessage(message);
+                    return;
+                }
+                return;
+            }
             // System.out.println(event.getClick() + " | " + (event.getCursor() != null ? event.getCursor().getType() : "null") + " | " +
             //        (event.getCurrentItem() != null ? event.getCurrentItem().getType() : "null"));
             ItemStack item = event.getCurrentItem();
@@ -189,6 +201,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                     return;
                 }
             }
+
             if (NetherChests.getInstance().isUpdateOnTransaction()) {
                 if (e.getCurrentItem() == null && (e.getAction() != InventoryAction.PLACE_SOME && e.getAction() != InventoryAction.PLACE_ALL && e.getAction() != InventoryAction.PLACE_ONE)) {
                     return;
@@ -273,6 +286,8 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        } else if (args[0].equalsIgnoreCase("migrate")) {
+
         }
         return true;
     }

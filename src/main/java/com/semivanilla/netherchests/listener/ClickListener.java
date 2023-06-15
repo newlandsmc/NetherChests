@@ -2,6 +2,7 @@ package com.semivanilla.netherchests.listener;
 
 import com.semivanilla.netherchests.NetherChests;
 import dev.triumphteam.gui.guis.BaseGui;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -49,6 +50,7 @@ public class ClickListener implements Listener {
             // System.out.println((event.getCurrentItem() != null ? event.getCurrentItem().getType().name() : "null") + " | " + (event.getCursor() != null ? event.getCursor().getType().name() : "null"));
             event.setCancelled(true);
             event.getWhoClicked().sendMessage(ChatColor.RED + "You cannot use hotkeys in a NetherChest.");
+            return;
         }
     }
 }

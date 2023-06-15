@@ -68,7 +68,7 @@ task runDev(type: JavaExec) {
 
     classpath = files('run/paper.jar')
     //run the serverJar, main from MANIFEST.MF
-    //args('nogui')
+    args('nogui')
     workingDir(file('run'))
 }
 runDev.dependsOn(project.tasks.copyPlugin)
