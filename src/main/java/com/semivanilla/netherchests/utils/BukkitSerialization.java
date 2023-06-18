@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,33 +40,41 @@ public class BukkitSerialization {
         }
     }
     public static ItemStack[] byteArrayToItemStacks(byte[] bytes) throws IOException {
-        try {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-            BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
-            ItemStack[] items = new ItemStack[dataInput.readInt()];
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+        BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+        ItemStack[] items = new ItemStack[dataInput.readInt()];
 
-            for (int Index = 0; Index < items.length; Index++) {
-                byte[] stack = (byte[]) dataInput.readObject();
-
-                if (stack != null) {
-                    items[Index] = ItemStack.deserializeBytes(stack);
-                } else {
-                    items[Index] = null;
-                }
+        for (int Index = 0; Index < items.length; Index++) {
+            byte[] stack = new byte[0];
+            try {
+                stack = (byte[]) dataInput.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
 
-            dataInput.close();
-            return items;
-        } catch (ClassNotFoundException e) {
-            throw new IOException("Unable to decode class type.", e);
+            if (stack != null) {
+                items[Index] = ItemStack.deserializeBytes(stack);
+            } else {
+                items[Index] = null;
+            }
         }
+
+        dataInput.close();
+        return items;
     }
 
     public static String itemStackArrayToBase64(ItemStack[] items) throws IllegalStateException {
         return Base64.getEncoder().encodeToString(itemStacksToByteArray(items));
     }
     public static ItemStack[] itemStackArrayFromBase64(String data) throws IOException {
-        return byteArrayToItemStacks(Base64.getDecoder().decode(data));
+        byte[] bytes;
+        try {
+            bytes = Base64.getDecoder().decode(data);
+            return byteArrayToItemStacks(bytes);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("Failed to deserialize itemstacks: " + e.getMessage() + " - Attempting legacy deserialization.");
+            return LegacySerialization.itemStackArrayFromBase64(data);
+        }
     }
 
     public static String serializeItem(ItemStack item) {
@@ -110,32 +119,35 @@ public class BukkitSerialization {
                         baos.write(bytes);
                     } else baos.write(0);
                 }
-                return Base64.getEncoder().encodeToString(baos.toByteArray());
+                return Base64Coder.encodeLines(baos.toByteArray());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         public static ItemStack[] itemStackArrayFromBase64(String data) throws IOException {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(data));
             ItemStack[] items = new ItemStack[inputStream.read()];
-            Bukkit.getLogger().info("items.length: " + items.length);
-
-            // Read the serialized inventory
-            for (int i = 0; i < items.length; i++) {
-                int size = inputStream.read();
-                Bukkit.getLogger().info("size: " + size);
-                if (size > 0) {
-                    byte[] bytes = inputStream.readNBytes(size);
-                    Bukkit.getLogger().info("read bytes: " + bytes);
-                    ItemStack item = ItemStack.deserializeBytes(bytes);
-                    Bukkit.getLogger().info("item: " + item);
-                    ItemNbt.removeTag(item, MF_GUI_KEY);
-                    items[i] = item;
+            try {
+                int bytesRead = 0;
+                // Read the serialized inventory
+                for (int i = 0; i < items.length; i++) {
+                    int size = inputStream.read();
+                    if (size > 0) {
+                        byte[] bytes = inputStream.readNBytes(size);
+                        bytesRead += size + 1;
+                        System.out.println("bytesRead: " + bytesRead);
+                        ItemStack item = ItemStack.deserializeBytes(bytes);
+                        System.out.println("item: " + item);
+                        ItemNbt.removeTag(item, MF_GUI_KEY);
+                        items[i] = item;
+                    }
                 }
-            }
 
-            inputStream.close();
+                inputStream.close();
+            } catch (Exception e) {
+                Bukkit.getLogger().info("Error deserializing itemstacks: " + e.getMessage());
+            }
             return items;
         }
     }

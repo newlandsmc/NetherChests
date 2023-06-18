@@ -33,10 +33,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.rmi.server.UID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private static NetherChests instance;
@@ -216,6 +219,8 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         return updateOnTransaction;
     }
 
+    private static final Pattern UUID_REGEX = Pattern.compile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (args.length == 0) {
@@ -237,13 +242,19 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "Usage: /netherchests open <player>");
                 return true;
             }
-            OfflinePlayer player = getServer().getOfflinePlayer(args[1]);
-            if (!storageProvider.contains(player.getUniqueId())) {
-                sender.sendMessage(ChatColor.RED + "Player " + player.getName() + " is not in the database. (they might not have anything inside.) Use /netherchests create " + player.getName() + " to create a new entry.");
+            UUID uuid;
+            if (UUID_REGEX.matcher(args[1]).matches()) { // if it's a uuid
+                uuid = UUID.fromString(args[1]);
+            } else {
+                OfflinePlayer player = getServer().getOfflinePlayer(args[1]);
+                uuid = player.getUniqueId();
+            }
+            if (!storageProvider.contains(uuid)) {
+                sender.sendMessage(ChatColor.RED + "Player " + uuid + " is not in the database. (they might not have anything inside.) Use /netherchests create <name> to create a new entry.");
                 return true;
             }
-            sender.sendMessage(ChatColor.GREEN + "Opening " + player.getName() + "'s Nether Chest...");
-            openNetherChest((Player) sender, player.getUniqueId(), true);
+            sender.sendMessage(ChatColor.GREEN + "Opening " + uuid + "'s Nether Chest...");
+            openNetherChest((Player) sender, uuid, true);
         } else if (args[0].equalsIgnoreCase("create")) {
             if (args.length == 1) {
                 sender.sendMessage(ChatColor.RED + "Usage: /netherchests create <player>");
@@ -286,8 +297,32 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else if (args[0].equalsIgnoreCase("migrate")) {
-
+        } else if (args[0].equalsIgnoreCase("loadf")) {
+            String file = args[1];
+            File f = new File(getDataFolder(), file);
+            if (!f.exists()) {
+                sender.sendMessage(ChatColor.RED + "File " + file + " does not exist.");
+                return true;
+            }
+            try {
+                String base64 = new String(Files.readAllBytes(f.toPath()));
+                ItemStack[] items = BukkitSerialization.itemStackArrayFromBase64(base64);
+                sender.sendMessage(ChatColor.GREEN + "Loaded " + items.length + " items.");
+                Player player = (Player) sender;
+                for (ItemStack item : items) {
+                    if (item == null || item.getType() == Material.AIR) {
+                        continue;
+                    }
+                    HashMap<Integer, ItemStack> left = player.getInventory().addItem(item);
+                    if (!left.isEmpty()) {
+                        for (ItemStack stack : left.values()) {
+                            player.getWorld().dropItem(player.getLocation(), stack);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return true;
     }
