@@ -8,5 +8,15 @@ player-name-format: '<white>%name%' # Format of the player name on the sign
 persist-chest-to-player: false # Should the chest be locked to the player who placed it, and anyone else can open said player's chest
 lock-chests: true # Should a chest only be able to be viewed by one player at a time? This is to prevent any dupe bugs. (does not work across servers)
 
+periodic-saves:
+  enabled: true
+  interval: 200 # 10 seconds in ticks
+  only-save-if-changed: true # Only save if the chest has changed
+
 enable-insert: true # should the player be able to put items in?
 insert-disabled-message: '<red>You cannot put items in this chest!' # Message to send to the player when they try to put items in and it's disabled
+
+rate-limit:
+  open:
+    cooldown: 4 # 4 seconds
+    message: '<red>You are opening netherchests too quickly! Please wait a second.'

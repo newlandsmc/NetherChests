@@ -1,8 +1,10 @@
 package com.semivanilla.netherchests.listener;
 
 import com.semivanilla.netherchests.NetherChests;
+import com.semivanilla.netherchests.utils.Cooldown;
 import dev.triumphteam.gui.guis.BaseGui;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -24,6 +26,13 @@ public class ClickListener implements Listener {
             if (event.getClickedBlock().getType() == Material.CHEST) {
                 if (NetherChests.getInstance().isNetherChest(event.getClickedBlock())) {
                     event.setCancelled(true);
+                    boolean cooldown = Cooldown.isOnCooldown("open", event.getPlayer().getUniqueId());
+                    if (cooldown) {
+                        String msg = NetherChests.getInstance().getConfig().getString("rate-limit.open.message", "<red>You are opening netherchests too quickly! Please wait a second.");
+                        event.getPlayer().sendRichMessage(msg);
+                        return;
+                    }
+                    Cooldown.addCooldown("open", event.getPlayer().getUniqueId(), NetherChests.getInstance().getConfig().getInt("rate-limit.open.cooldown", 4));
                     if (NetherChests.getInstance().getConfig().getBoolean("persist-chest-to-player", false)) {
                         NetherChests.getInstance().openNetherChest(event.getPlayer(), event.getPlayer().getUniqueId());
                     } else {

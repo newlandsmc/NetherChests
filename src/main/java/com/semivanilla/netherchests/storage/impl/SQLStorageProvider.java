@@ -3,6 +3,7 @@ package com.semivanilla.netherchests.storage.impl;
 import com.semivanilla.netherchests.NetherChests;
 import com.semivanilla.netherchests.storage.StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -36,10 +37,9 @@ public class SQLStorageProvider implements StorageProvider {
         String driver = config.getString("driver-class", "com.mysql.jdbc.Driver");
         table = config.getString("table", "netherchests");
         try {
-            //connection = DriverManager.getConnection(url, user, password);
-            dataSource = new HikariDataSource();
-            dataSource.setDriverClassName(driver);
-            dataSource.setJdbcUrl(
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setDriverClassName(driver);
+            hikariConfig.setJdbcUrl(
                     "jdbc:mysql://" +
                             url +
                             ":" +
@@ -47,11 +47,17 @@ public class SQLStorageProvider implements StorageProvider {
                             "/" +
                             database
             );
-            dataSource.addDataSourceProperty("serverName", url);
-            dataSource.addDataSourceProperty("port", port);
-            dataSource.addDataSourceProperty("databaseName", database);
-            dataSource.addDataSourceProperty("user", user);
-            dataSource.addDataSourceProperty("password", password);
+            hikariConfig.addDataSourceProperty("serverName", url);
+            hikariConfig.addDataSourceProperty("port", port);
+            hikariConfig.addDataSourceProperty("databaseName", database);
+            hikariConfig.addDataSourceProperty("user", user);
+            hikariConfig.addDataSourceProperty("password", password);
+
+            hikariConfig.setConnectionTimeout(config.getLong("connection-timeout", 30000));
+            hikariConfig.setIdleTimeout(config.getLong("idle-timeout", 600000));
+            hikariConfig.setMaxLifetime(config.getLong("max-lifetime", 1800000));
+
+            dataSource = new HikariDataSource(hikariConfig);
 
             // contents are bytes
             String sql = "CREATE TABLE IF NOT EXISTS " + table + "(UUID varchar(255), contents MEDIUMBLOB)";

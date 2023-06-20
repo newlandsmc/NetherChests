@@ -16,7 +16,7 @@ import java.util.Base64;
 import java.util.List;
 
 public class BukkitSerialization {
-    private static final String MF_GUI_KEY = "mf-gui"; // TriumphGUI adds this nbt tag to the items, but we have to strip it out to allow them to stack.
+    public static final String MF_GUI_KEY = "mf-gui"; // TriumphGUI adds this nbt tag to the items, but we have to strip it out to allow them to stack.
 
     public static byte[] itemStacksToByteArray(ItemStack[] items) {
         try {
@@ -27,6 +27,7 @@ public class BukkitSerialization {
 
             for (ItemStack item : items) {
                 if (item != null) {
+                    ItemNbt.removeTag(item, MF_GUI_KEY);
                     dataOutput.writeObject(item.serializeAsBytes());
                 } else {
                     dataOutput.writeObject(null);
@@ -44,18 +45,19 @@ public class BukkitSerialization {
         BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
         ItemStack[] items = new ItemStack[dataInput.readInt()];
 
-        for (int Index = 0; Index < items.length; Index++) {
+        for (int i = 0; i < items.length; i++) {
             byte[] stack = new byte[0];
             try {
                 stack = (byte[]) dataInput.readObject();
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-
             if (stack != null) {
-                items[Index] = ItemStack.deserializeBytes(stack);
+                ItemStack item = ItemStack.deserializeBytes(stack);
+                ItemNbt.removeTag(item, MF_GUI_KEY);
+                items[i] = item;
             } else {
-                items[Index] = null;
+                items[i] = null;
             }
         }
 
@@ -67,6 +69,7 @@ public class BukkitSerialization {
         return Base64.getEncoder().encodeToString(itemStacksToByteArray(items));
     }
     public static ItemStack[] itemStackArrayFromBase64(String data) throws IOException {
+        data = data.replace("\n", "").trim();
         byte[] bytes;
         try {
             bytes = Base64.getDecoder().decode(data);
@@ -146,7 +149,7 @@ public class BukkitSerialization {
 
                 inputStream.close();
             } catch (Exception e) {
-                Bukkit.getLogger().info("Error deserializing itemstacks: " + e.getMessage());
+                Bukkit.getLogger().info("Error deserializing itemstacks (legacy): " + e.getMessage());
             }
             return items;
         }

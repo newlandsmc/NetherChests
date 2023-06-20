@@ -2,10 +2,11 @@ package com.semivanilla.netherchests;
 
 import com.semivanilla.netherchests.listener.BlockListener;
 import com.semivanilla.netherchests.listener.ClickListener;
+import com.semivanilla.netherchests.listener.PlayerListener;
 import com.semivanilla.netherchests.storage.StorageProvider;
-import com.semivanilla.netherchests.storage.impl.H2StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
-import dev.triumphteam.gui.guis.BaseGui;
+import com.semivanilla.netherchests.utils.Cooldown;
+import com.semivanilla.netherchests.utils.GuiSaveRunnable;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.StorageGui;
@@ -34,11 +35,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.rmi.server.UID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 public final class NetherChests extends JavaPlugin implements CommandExecutor {
@@ -82,10 +83,12 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         this.storageProvider.init(this);
         getServer().getPluginManager().registerEvents(new BlockListener(), this);
         getServer().getPluginManager().registerEvents(new ClickListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 
         Objects.requireNonNull(getCommand("netherchests")).setExecutor(this);
 
         updateOnTransaction = getConfig().getBoolean("update-on-transaction", true);
+        Cooldown.createCooldown("open");
     }
 
     @Override
@@ -157,9 +160,18 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         }
         openChests.put(uuid, player.getUniqueId());
         gui.open(player);
+        AtomicReference<GuiSaveRunnable> runnable = new AtomicReference<>();
+        boolean periodicSaves = getConfig().getBoolean("periodic-saves.enabled", true);
+        if (periodicSaves) {
+            long ticks = getConfig().getLong("periodic-saves.ticks", 200);
+            runnable.set(new GuiSaveRunnable(getConfig().getBoolean("periodic-saves.only-save-if-changed", true), gui, player));
+            runnable.get().runTaskTimer(this, 20, ticks);
+        }
         gui.setCloseGuiAction((e) -> {
-            NetherChests.getInstance().getStorageProvider().save(uuid,
-                    e.getInventory().getContents());
+            if (runnable.get() != null) {
+                runnable.get().cancel();
+            }
+            NetherChests.getInstance().getStorageProvider().save(uuid, e.getInventory().getContents());
             player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_CLOSE, 1, 1);
             openChests.remove(uuid);
         });
@@ -306,7 +318,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             }
             try {
                 String base64 = new String(Files.readAllBytes(f.toPath()));
-                ItemStack[] items = BukkitSerialization.itemStackArrayFromBase64(base64);
+                ItemStack[] items = BukkitSerialization.LegacySerialization.itemStackArrayFromBase64(base64);
                 sender.sendMessage(ChatColor.GREEN + "Loaded " + items.length + " items.");
                 Player player = (Player) sender;
                 for (ItemStack item : items) {
@@ -323,6 +335,15 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        } else if (args[0].equalsIgnoreCase("savelegacy")) {
+            ItemStack[] inv = ((Player) sender).getInventory().getContents();
+            String base64 = BukkitSerialization.LegacySerialization.itemStackArrayToBase64(inv);
+            try {
+                Files.write(new File(getDataFolder(), "legacy.txt").toPath(), base64.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            sender.sendMessage(ChatColor.GREEN + "Saved " + inv.length + " items.");
         }
         return true;
     }
