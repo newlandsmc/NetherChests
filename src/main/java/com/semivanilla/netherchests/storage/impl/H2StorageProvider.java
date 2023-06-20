@@ -81,6 +81,10 @@ public class H2StorageProvider implements StorageProvider {
 
     @Override
     public void delete(UUID uuid) {
-        save(uuid, new ItemStack[0]);
+        storage.deleteRowsWhere(
+                "inventories",
+                "UUID",
+                "UUID = '" + uuid.toString() + "'"
+        );
     }
 }

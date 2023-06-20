@@ -7,6 +7,7 @@ import com.semivanilla.netherchests.storage.StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
 import com.semivanilla.netherchests.utils.Cooldown;
 import com.semivanilla.netherchests.utils.GuiSaveRunnable;
+import com.semivanilla.netherchests.utils.MigrationManager;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.StorageGui;
@@ -47,7 +48,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private static MiniMessage miniMessage = MiniMessage.builder().build();
     private StorageProvider storageProvider;
 
-    private boolean updateOnTransaction = false;
+    private boolean updateOnTransaction = false, startup = true;
     private Map<UUID, UUID> openChests = new HashMap<>();
 
     public static NetherChests getInstance() {
@@ -81,6 +82,9 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         }
 
         this.storageProvider.init(this);
+
+        MigrationManager.INSTANCE.init();
+
         getServer().getPluginManager().registerEvents(new BlockListener(), this);
         getServer().getPluginManager().registerEvents(new ClickListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
@@ -89,6 +93,13 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
 
         updateOnTransaction = getConfig().getBoolean("update-on-transaction", true);
         Cooldown.createCooldown("open");
+        startup = false;
+    }
+
+    @Override
+    public void reloadConfig() {
+        super.reloadConfig();
+        if (!startup) MigrationManager.INSTANCE.reloadConfig();
     }
 
     @Override
@@ -138,14 +149,17 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
         return isNetherChest;
     }
 
-    public void openNetherChest(Player player, UUID uuid) {
-        openNetherChest(player, uuid, false);
+    public void openNetherChest(Player player, UUID uuid, boolean migrate) {
+        openNetherChest(player, uuid, false, migrate);
     }
 
-    public void openNetherChest(Player player, UUID uuid, boolean ignoreLock) {
+    public void openNetherChest(Player player, UUID uuid, boolean ignoreLock, boolean migrate) {
         if (!ignoreLock && NetherChests.getInstance().isNetherChestOpen(uuid)) {
             player.sendMessage(ChatColor.RED + "This chest is already open!");
             return;
+        }
+        if (migrate) {
+            MigrationManager.INSTANCE.tryMigration(uuid);
         }
         player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 1, 1);
         ItemStack[] items = NetherChests.getInstance().getStorageProvider().load(uuid);

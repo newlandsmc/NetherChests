@@ -34,7 +34,7 @@ public class ClickListener implements Listener {
                     }
                     Cooldown.addCooldown("open", event.getPlayer().getUniqueId(), NetherChests.getInstance().getConfig().getInt("rate-limit.open.cooldown", 4));
                     if (NetherChests.getInstance().getConfig().getBoolean("persist-chest-to-player", false)) {
-                        NetherChests.getInstance().openNetherChest(event.getPlayer(), event.getPlayer().getUniqueId());
+                        NetherChests.getInstance().openNetherChest(event.getPlayer(), event.getPlayer().getUniqueId(), true);
                     } else {
                         List<MetadataValue> metadataValues = event.getClickedBlock().getMetadata("NetherChestOwner");
                         if (metadataValues.isEmpty()) {
@@ -44,7 +44,7 @@ public class ClickListener implements Listener {
                         String owner = metadataValues.get(0).asString();
                         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
                         UUID ownerUUID = offlinePlayer.getUniqueId();
-                        NetherChests.getInstance().openNetherChest(event.getPlayer(), ownerUUID);
+                        NetherChests.getInstance().openNetherChest(event.getPlayer(), ownerUUID, true);
                     }
                 }
             }

@@ -42,10 +42,8 @@ public class GuiSaveRunnable extends BukkitRunnable {
             }
             lastItems = items;
         }
-        System.out.println("changed " + changed);
         if (!onlySaveIfChanged || changed) {
             NetherChests.getInstance().getStorageProvider().save(player.getUniqueId(), gui.getInventory().getContents());
-            System.out.println("saved");
         }
     }
 }

@@ -20,3 +20,8 @@ rate-limit:
   open:
     cooldown: 4 # 4 seconds
     message: '<red>You are opening netherchests too quickly! Please wait a second.'
+
+
+migrate: # Migration from H2 to SQL
+  enabled: false
+  on-join: false # Should we migrate the player's chests when they join? Otherwise will be migrated when they try to access their netherchest
