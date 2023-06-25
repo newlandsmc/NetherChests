@@ -9,3 +9,4 @@ table: 'netherchests'
 connection-timeout: 3000 # 30 seconds
 connection-idle-timeout: 600000 # 10 minutes
 connection-max-lifetime: 1800000 # 30 minutes
+maximum-pool-size: 15

@@ -49,7 +49,7 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     private StorageProvider storageProvider;
 
     private boolean updateOnTransaction = false, startup = true;
-    private Map<UUID, UUID> openChests = new HashMap<>();
+    public Map<UUID, UUID> openChests = new HashMap<>();
 
     public static NetherChests getInstance() {
         return instance;
@@ -154,10 +154,12 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
     }
 
     public void openNetherChest(Player player, UUID uuid, boolean ignoreLock, boolean migrate) {
-        if (!ignoreLock && NetherChests.getInstance().isNetherChestOpen(uuid)) {
+        getLogger().info("Opening nether chest for " + player.getName() + " with UUID " + uuid.toString());
+        if (!ignoreLock && isNetherChestOpen(uuid)) {
             player.sendMessage(ChatColor.RED + "This chest is already open!");
             return;
         }
+        openChests.put(uuid, player.getUniqueId());
         if (migrate) {
             MigrationManager.INSTANCE.tryMigration(uuid);
         }
@@ -172,7 +174,6 @@ public final class NetherChests extends JavaPlugin implements CommandExecutor {
                 gui.setItem(i, new GuiItem(items[i]));
             }
         }
-        openChests.put(uuid, player.getUniqueId());
         gui.open(player);
         AtomicReference<GuiSaveRunnable> runnable = new AtomicReference<>();
         boolean periodicSaves = getConfig().getBoolean("periodic-saves.enabled", true);

@@ -62,7 +62,6 @@ public class BlockListener implements Listener {
             if (isNetherChestSign(event.getLines())) {
                 Block chest = getConnectedChest(sign);
                 if (chest != null) {
-                    System.out.println("NetherChest found!");
                     chest.setMetadata("NetherChest", new FixedMetadataValue(NetherChests.getInstance(), true));
                     String rawOwner = event.getPlayer().getName();
                     chest.setMetadata("NetherChestOwner", new FixedMetadataValue(NetherChests.getInstance(), rawOwner));

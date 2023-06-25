@@ -12,6 +12,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Cooldown.removeAllCooldowns(event.getPlayer().getUniqueId());
+        NetherChests.getInstance().openChests.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler

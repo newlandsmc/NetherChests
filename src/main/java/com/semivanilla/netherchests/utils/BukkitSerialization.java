@@ -1,5 +1,6 @@
 package com.semivanilla.netherchests.utils;
 
+import com.semivanilla.netherchests.NetherChests;
 import dev.triumphteam.gui.components.util.ItemNbt;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -139,17 +140,16 @@ public class BukkitSerialization {
                     if (size > 0) {
                         byte[] bytes = inputStream.readNBytes(size);
                         bytesRead += size + 1;
-                        System.out.println("bytesRead: " + bytesRead);
                         ItemStack item = ItemStack.deserializeBytes(bytes);
-                        System.out.println("item: " + item);
                         ItemNbt.removeTag(item, MF_GUI_KEY);
                         items[i] = item;
                     }
                 }
-
+                NetherChests.getInstance().getLogger().info("Read " + bytesRead + " bytes from legacy serialization.");
                 inputStream.close();
             } catch (Exception e) {
                 Bukkit.getLogger().info("Error deserializing itemstacks (legacy): " + e.getMessage());
+                throw e;
             }
             return items;
         }

@@ -5,12 +5,14 @@ import com.semivanilla.netherchests.storage.StorageProvider;
 import com.semivanilla.netherchests.utils.BukkitSerialization;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class SQLStorageProvider implements StorageProvider {
@@ -56,6 +58,7 @@ public class SQLStorageProvider implements StorageProvider {
             hikariConfig.setConnectionTimeout(config.getLong("connection-timeout", 30000));
             hikariConfig.setIdleTimeout(config.getLong("idle-timeout", 600000));
             hikariConfig.setMaxLifetime(config.getLong("max-lifetime", 1800000));
+            hikariConfig.setMaximumPoolSize(config.getInt("maximum-pool-size", 15));
 
             dataSource = new HikariDataSource(hikariConfig);
 
@@ -77,28 +80,19 @@ public class SQLStorageProvider implements StorageProvider {
 
     @Override
     public void save(UUID uuid, ItemStack[] items) {
+        if (items == null || items.length == 0 || Arrays.stream(items).allMatch(item -> item == null || item.getType() == Material.AIR)) {
+            delete(uuid);
+            return;
+        }
         byte[] bytes = BukkitSerialization.itemStacksToByteArray(items);
-        String selectSQL = "SELECT * FROM " + table + " WHERE UUID = ?";
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement statement1 = connection.prepareStatement(selectSQL);
-            statement1.setString(1, uuid.toString());
-            ResultSet resultSet = statement1.executeQuery();
-            if (resultSet.next()) {
-                String updateSQL = "UPDATE " + table + " SET contents = ? WHERE UUID = ?";
-                PreparedStatement statement2 = connection.prepareStatement(updateSQL);
-                // statement2.setString(1, base64);
-                statement2.setBytes(1, bytes);
-                statement2.setString(2, uuid.toString());
-                statement2.executeUpdate();
-            } else {
-                String insertSQL = "INSERT INTO " + table + " (UUID, contents) VALUES (?, ?)";
-                PreparedStatement statement3 = connection.prepareStatement(insertSQL);
-                statement3.setString(1, uuid.toString());
-                // statement3.setString(2, base64);
-                statement3.setBytes(2, bytes);
-                statement3.executeUpdate();
-            }
+        String sql = "REPLACE INTO " + table + " (UUID, contents) VALUES (?, ?)";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+        ) {
+            statement.setString(1, uuid.toString());
+            statement.setBytes(2, bytes);
+            statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -107,8 +101,8 @@ public class SQLStorageProvider implements StorageProvider {
     @Override
     public ItemStack[] load(UUID uuid) {
         String selectSQL = "SELECT * FROM " + table + " WHERE UUID = ?";
-        try {
-            PreparedStatement statement = dataSource.getConnection().prepareStatement(selectSQL);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(selectSQL)){
             statement.setString(1, uuid.toString());
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -131,8 +125,9 @@ public class SQLStorageProvider implements StorageProvider {
     @Override
     public boolean contains(UUID uuid) {
         String selectSQL = "SELECT * FROM " + table + " WHERE UUID = ?";
-        try {
-            PreparedStatement statement = dataSource.getConnection().prepareStatement(selectSQL);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(selectSQL)
+        ) {
             statement.setString(1, uuid.toString());
             ResultSet resultSet = statement.executeQuery();
             return resultSet.next();
@@ -144,8 +139,8 @@ public class SQLStorageProvider implements StorageProvider {
     @Override
     public void delete(UUID uuid) {
         String deleteSQL = "DELETE FROM " + table + " WHERE UUID = ?";
-        try {
-            PreparedStatement statement = dataSource.getConnection().prepareStatement(deleteSQL);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(deleteSQL)) {
             statement.setString(1, uuid.toString());
             statement.executeUpdate();
         } catch (SQLException e) {
