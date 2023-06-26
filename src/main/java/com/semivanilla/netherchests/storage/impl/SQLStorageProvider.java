@@ -38,34 +38,36 @@ public class SQLStorageProvider implements StorageProvider {
         int port = config.getInt("port", 3306);
         String driver = config.getString("driver-class", "com.mysql.jdbc.Driver");
         table = config.getString("table", "netherchests");
-        try {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setDriverClassName(driver);
-            hikariConfig.setJdbcUrl(
-                    "jdbc:mysql://" +
-                            url +
-                            ":" +
-                            port +
-                            "/" +
-                            database
-            );
-            hikariConfig.addDataSourceProperty("serverName", url);
-            hikariConfig.addDataSourceProperty("port", port);
-            hikariConfig.addDataSourceProperty("databaseName", database);
-            hikariConfig.addDataSourceProperty("user", user);
-            hikariConfig.addDataSourceProperty("password", password);
 
-            hikariConfig.setConnectionTimeout(config.getLong("connection-timeout", 30000));
-            hikariConfig.setIdleTimeout(config.getLong("idle-timeout", 600000));
-            hikariConfig.setMaxLifetime(config.getLong("max-lifetime", 1800000));
-            hikariConfig.setMaximumPoolSize(config.getInt("maximum-pool-size", 15));
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setDriverClassName(driver);
+        hikariConfig.setJdbcUrl(
+                "jdbc:mysql://" +
+                        url +
+                        ":" +
+                        port +
+                        "/" +
+                        database
+        );
+        hikariConfig.addDataSourceProperty("serverName", url);
+        hikariConfig.addDataSourceProperty("port", port);
+        hikariConfig.addDataSourceProperty("databaseName", database);
+        hikariConfig.addDataSourceProperty("user", user);
+        hikariConfig.addDataSourceProperty("password", password);
 
-            dataSource = new HikariDataSource(hikariConfig);
+        hikariConfig.setConnectionTimeout(config.getLong("connection-timeout", 30000));
+        hikariConfig.setIdleTimeout(config.getLong("idle-timeout", 600000));
+        hikariConfig.setMaxLifetime(config.getLong("max-lifetime", 1800000));
+        hikariConfig.setMaximumPoolSize(config.getInt("maximum-pool-size", 15));
 
-            // contents are bytes
-            String sql = "CREATE TABLE IF NOT EXISTS " + table + "(UUID varchar(255), contents MEDIUMBLOB)";
-            PreparedStatement statement = dataSource.getConnection().prepareStatement(sql);
-            statement.execute();
+        dataSource = new HikariDataSource(hikariConfig);
+
+        // contents are bytes
+        String sql = "CREATE TABLE IF NOT EXISTS " + table + "(UUID varchar(255), contents MEDIUMBLOB)";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+        ) {
+            statement.executeQuery();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
