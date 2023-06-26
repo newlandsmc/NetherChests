@@ -67,7 +67,7 @@ public class SQLStorageProvider implements StorageProvider {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
         ) {
-            statement.executeQuery();
+            statement.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
