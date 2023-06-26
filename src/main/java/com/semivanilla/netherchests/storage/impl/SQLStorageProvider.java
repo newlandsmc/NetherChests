@@ -85,14 +85,28 @@ public class SQLStorageProvider implements StorageProvider {
             return;
         }
         byte[] bytes = BukkitSerialization.itemStacksToByteArray(items);
-        String sql = "REPLACE INTO " + table + " (UUID, contents) VALUES (?, ?)";
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
+        String selectSQL = "SELECT * FROM " + table + " WHERE UUID = ?";
+        try (
+                Connection connection = dataSource.getConnection();
+                PreparedStatement statement1 = connection.prepareStatement(selectSQL);
         ) {
-            statement.setString(1, uuid.toString());
-            statement.setBytes(2, bytes);
-            statement.executeUpdate();
+            statement1.setString(1, uuid.toString());
+            ResultSet resultSet = statement1.executeQuery();
+            if (resultSet.next()) {
+                String updateSQL = "UPDATE " + table + " SET contents = ? WHERE UUID = ?";
+                PreparedStatement statement2 = connection.prepareStatement(updateSQL);
+                // statement2.setString(1, base64);
+                statement2.setBytes(1, bytes);
+                statement2.setString(2, uuid.toString());
+                statement2.executeUpdate();
+            } else {
+                String insertSQL = "INSERT INTO " + table + " (UUID, contents) VALUES (?, ?)";
+                PreparedStatement statement3 = connection.prepareStatement(insertSQL);
+                statement3.setString(1, uuid.toString());
+                // statement3.setString(2, base64);
+                statement3.setBytes(2, bytes);
+                statement3.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +116,7 @@ public class SQLStorageProvider implements StorageProvider {
     public ItemStack[] load(UUID uuid) {
         String selectSQL = "SELECT * FROM " + table + " WHERE UUID = ?";
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(selectSQL)){
+             PreparedStatement statement = connection.prepareStatement(selectSQL)) {
             statement.setString(1, uuid.toString());
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {

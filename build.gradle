@@ -85,5 +85,6 @@ shadowJar {
 
     relocate 'dev.triumphteam', 'com.semivanilla.netherchests.relocate.triumphteam'
     relocate 'com.zaxxer', 'com.semivanilla.netherchests.relocate.hikari'
+    relocate 'com.mysql', 'com.semivanilla.netherchests.relocate.mysql'
 
 }
